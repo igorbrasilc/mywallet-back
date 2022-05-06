@@ -4,16 +4,16 @@ import chalk from 'chalk';
 import cors from 'cors';
 import {MongoClient, ObjectId} from 'mongodb';
 import bcrypt from 'bcrypt';
+import {v4 as uuid} from 'uuid';
 import dotenv from 'dotenv';
+
+import db from './db.js';
 
 dotenv.config();
 
 const app = express();
 app.use(json());
 app.use(cors());
-
-let db = null;
-const mongoClient = new MongoClient(process.env.MONGO_URL);
 
 app.post('/sign-up', async (req, res) => {
 
@@ -24,30 +24,23 @@ app.post('/sign-up', async (req, res) => {
     const objUser = {
         name,
         email,
-        password: encryptedPassword
+        password: encryptedPassword,
+        income: [],
+        outcome: []
     };
 
     try {
-        await mongoClient.connect();
-        console.log(chalk.blue('Mongo Connected'));
-        db = mongoClient.db(process.env.DATABASE_NAME);
+        const participant = await db.collection('users').findOne({email});
 
-        const participantSearch = await db.collection('users').findOne({email});
-
-        if (participantSearch) {
+        if (participant) {
             res.status(409).send('Usuário já existe');
             return;
         }
 
         await db.collection('users').insertOne(objUser);
         res.status(201).send('Usuário criado!');
-        await mongoClient.close();
-        console.log(chalk.blue('Mongo Closed'));
     } catch (e) {
         res.status(422).send(e);
-        console.log(chalk.bold.red('Erro no post sign-up', e));
-        await mongoClient.close();
-        console.log(chalk.blue('Mongo Closed'));
     }
     
 });
@@ -56,35 +49,58 @@ app.post('/sign-in', async (req, res) => {
 
     const {email, password} = req.body;
 
-    console.log(req.body);
-
     try {
-        await mongoClient.connect();
-        console.log(chalk.blue('Mongo Connected'));
-        db = mongoClient.db(process.env.DATABASE_NAME);
+        const participant = await db.collection('users').findOne({email});
 
-        const participantSearch = await db.collection('users').findOne({email});
-        console.log(participantSearch);
+        if (participant && bcrypt.compareSync(password, participant.password)) {
 
-        if (participantSearch && bcrypt.compareSync(password, participantSearch.password)) {
-            res.status(200).send(participantSearch);
-            console.log(participantSearch);
-            await mongoClient.close();
-            console.log(chalk.blue('Mongo Closed'));
+            const token = uuid();
+
+            await db.collection('sessions').insertOne({
+                token,
+                // eslint-disable-next-line no-underscore-dangle
+                userId: participant._id
+            });
+
+            const objUser = {...participant, token};
+
+            delete objUser.password;
+
+            res.status(200).send(objUser);
             return;
         } 
 
         res.status(404).send('Usuário não encontrado no banco de dados');
-        await mongoClient.close();
-        console.log(chalk.blue('Mongo Closed'));
     } catch (e) {
         res.status(422).send(e);
         console.log(chalk.bold.red('Erro no post sign-in', e));
-        await mongoClient.close();
-        console.log(chalk.blue('Mongo Closed'));
     }
     
-})
+});
+
+app.get('/history', async (req, res) => {
+    const {authorization} = req.headers;
+    const token = authorization?.replace('Bearer', '').trim();
+
+    if (!token) return res.sendStatus(401);
+
+    try {    
+        const session = await db.collection('sessions').findOne({token});
+    
+        if (!session) return res.sendStatus(401);
+    
+        const user = await db.collection('users').findOne({_id: session.userId});
+    
+        if (!user) return res.sendStatus(404);
+    
+        delete user.password;
+    
+        res.status(200).send(user);
+    } catch (e) {
+        res.status(422).send(e);
+        console.log(chalk.bold.red('Erro no get history', e));
+    }
+});
 
 app.listen(process.env.DOOR, () => {
     console.log(chalk.bold.green('Server on'));
