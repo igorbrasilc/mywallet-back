@@ -1,6 +1,6 @@
 import express from 'express';
-import authRouter from './authRouter';
-import balanceRouter from './balanceRouter';
+import authRouter from './authRouter.js';
+import balanceRouter from './balanceRouter.js';
 
 const router = express.Router();
 router.use(authRouter);

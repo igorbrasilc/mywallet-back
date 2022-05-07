@@ -1,6 +1,6 @@
 import express from 'express';
 
-import {getHistory} from '../controllers/balanceController';
+import { getHistory } from '../controllers/balanceController.js';
 
 const balanceRouter = express.Router();
 

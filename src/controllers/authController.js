@@ -1,11 +1,11 @@
 import bcrypt from 'bcrypt';
-import {v4 as uuid} from 'uuid';
+import { v4 as uuid } from 'uuid';
 import chalk from 'chalk';
 
-import db from '../db';
+import db from '../db.js';
 
 export async function signUpUser(req, res) {
-    const {name, email, password} = req.body;
+    const { name, email, password } = req.body;
 
     const encryptedPassword = bcrypt.hashSync(password, 10);
 
@@ -18,7 +18,7 @@ export async function signUpUser(req, res) {
     };
 
     try {
-        const participant = await db.collection('users').findOne({email});
+        const participant = await db.collection('users').findOne({ email });
 
         if (participant) {
             res.status(409).send('Usuário já existe');
@@ -33,10 +33,10 @@ export async function signUpUser(req, res) {
 }
 
 export async function signInUser(req, res) {
-    const {email, password} = req.body;
+    const { email, password } = req.body;
 
     try {
-        const participant = await db.collection('users').findOne({email});
+        const participant = await db.collection('users').findOne({ email });
 
         if (participant && bcrypt.compareSync(password, participant.password)) {
 
@@ -48,13 +48,13 @@ export async function signInUser(req, res) {
                 userId: participant._id
             });
 
-            const objUser = {...participant, token};
+            const objUser = { ...participant, token };
 
             delete objUser.password;
 
             res.status(200).send(objUser);
             return;
-        } 
+        }
 
         res.status(404).send('Usuário não encontrado no banco de dados');
     } catch (e) {
