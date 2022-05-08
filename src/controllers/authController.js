@@ -13,8 +13,7 @@ export async function signUpUser(req, res) {
         name,
         email,
         password: encryptedPassword,
-        income: [],
-        outcome: []
+        transactions: []
     };
 
     try {
