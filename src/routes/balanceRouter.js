@@ -1,11 +1,12 @@
 import express from 'express';
 
-import { getHistory, setNewIncome } from '../controllers/balanceController.js';
-import {incomeValidation} from '../middlewares/balanceMiddlewares.js';
+import { getHistory, setNewIncome, setNewOutcome } from '../controllers/balanceController.js';
+import {transactionValidation} from '../middlewares/balanceMiddlewares.js';
 
 const balanceRouter = express.Router();
 
 balanceRouter.get('/history', getHistory);
-balanceRouter.post('/new-income', incomeValidation, setNewIncome);
+balanceRouter.post('/new-income', transactionValidation, setNewIncome);
+balanceRouter.post('/new-outcome', transactionValidation, setNewOutcome);
 
 export default balanceRouter;

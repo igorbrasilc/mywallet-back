@@ -1,13 +1,13 @@
-import {incomeSchema} from '../schemas/balanceSchemas.js';
+import {transactionSchema} from '../schemas/balanceSchemas.js';
 
-export function incomeValidation(req, res, next) {
+export function transactionValidation(req, res, next) {
 
     const { authorization } = req.headers;
     const token = authorization?.replace('Bearer', '').trim();
 
     if (!token) return res.sendStatus(401);
 
-    const validation = incomeSchema.validate(req.body);
+    const validation = transactionSchema.validate(req.body);
 
     if (validation.error) {
         return res.sendStatus(422);
