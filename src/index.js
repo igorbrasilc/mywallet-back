@@ -14,6 +14,6 @@ app.use(json());
 app.use(cors());
 app.use(router);
 
-app.listen(process.env.DOOR, () => {
-    console.log(chalk.bold.green('Server on'));
+app.listen(process.env.PORT, () => {
+    console.log(chalk.bold.green('Server on port' + process.env.PORT));
 });
